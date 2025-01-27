@@ -4,7 +4,6 @@ import * as opentype from 'opentype.js';
 import { FontObject, FontObjectImpl, FontObjectEmpty } from '../utils/font-object';
 import * as path from "path";
 import * as fs from "fs";
-
 export interface FolderItem {
 	name: string;
 	path: string;
@@ -12,28 +11,22 @@ export interface FolderItem {
 	children: FolderItem[] | null;
 	read(cb: () => void): void;
 }
-
 class Folder implements FolderItem {
 	constructor(public name: string, public path: string) {}
 
 	get isExpandable(): boolean {
-		// temp code
 		if (!this._folders) return true;
-
 		return !!this._folders?.length;
 	}
-
 	// array of subfolders; null if no subfolders (no empty arrays returned)
 	get children(): FolderItem[] | null {
 		return this._folders?.length ? this._folders : null;
 	}
-
 	read(cb: () => void) {
 		if (this._folders) {
 			cb();
 			return;
 		}
-
 		fs.readdir(this.path, {withFileTypes: true}, (err, files) => {
 			if (err) {
 				// console.log('readdir',err);
@@ -47,16 +40,16 @@ class Folder implements FolderItem {
 			cb();
 		});
 	}
-
 	_folders: FolderItem[] | undefined;
 }
-
-
 @Injectable({
 	providedIn: 'root'
 })
 export class FileService {
-
+	ipc: IpcRenderer;
+	// _root = "/usr/share/fonts";
+	_root = "X:\software\system\Fonts\Malayalam fonts\Unicode Fonts";
+	// _root = "/mnt/rox/archive/Fonty";
 	constructor() {
 		const require = (window as any).require;
 		const electron = require && require('electron');
@@ -67,6 +60,39 @@ export class FileService {
 		}
 		// this.fs = fs.readFile;
 	}
+	getFolder(syspath: string): FolderItem {
+		return new Folder(path.basename(syspath), syspath);
+	}
+
+	getRoot(): FolderItem[] {
+		return [new Folder(path.basename(this._root), this._root)];
+	}
+
+	getFolders(path: string): string[] | null {
+		return null;
+	}
+
+	isExpandable(path: string): boolean {
+		return false;
+	}
+
+	getRootPath(): string {
+		return this._root;
+	}
+
+	
+
+	// xgetFolders(path?: string) {
+	// 	//
+	// 	fs.readdir(path || this._root, {withFileTypes: true}, (err, files) => {
+	// 		if (err) {
+	// 			//
+	// 		}
+	// 		else {
+	// 			const e = files;
+	// 		}
+	// 	});
+	// }
 /*
 	getFont(cb) {
 		const fs = require("fs"); // as Node.FileSystem;
@@ -92,43 +118,6 @@ export class FileService {
 		}
 	}
 */
-	ipc: IpcRenderer;
-
-	getFolder(syspath: string): FolderItem {
-		return new Folder(path.basename(syspath), syspath);
-	}
-
-	getRoot(): FolderItem[] {
-		return [new Folder(path.basename(this._root), this._root)];
-	}
-
-	getFolders(path: string): string[] | null {
-		return null;
-	}
-
-	isExpandable(path: string): boolean {
-		return false;
-	}
-
-	getRootPath(): string {
-		return this._root;
-	}
-
-	// _root = "/usr/share/fonts";
-	_root = "/home/mike/fonts";
-	// _root = "/mnt/rox/archive/Fonty";
-
-	xgetFolders(path?: string) {
-		//
-		fs.readdir(path || this._root, {withFileTypes: true}, (err, files) => {
-			if (err) {
-				//
-			}
-			else {
-				const e = files;
-			}
-		});
-	}
 
 	getFonts(path: string, cb: (phase: 'start'|'next'|'end'|'aborted', index: number, total: number, font: FontObject | null) => void): {cancel: () => boolean} {
 		const dir = path;
@@ -142,7 +131,7 @@ export class FileService {
 			const dirents = await readdir(dir, { withFileTypes: true });
 			if (abort) return;
 			for (const dirent of dirents) {
-				const res = resolve(dir, dirent.name);
+				const res :string = resolve(dir, dirent.name);
 				if (dirent.isDirectory()) {
 					yield* getFiles(res);
 				} else if (dirent.isFile()) {

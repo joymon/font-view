@@ -61,7 +61,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
 		this.operationMode = 'indeterminate';
 
-		this._pending = this.fs.getFonts(path, (phase, i, n, font) => {
+		this._pending = this.fs.getFonts(path, (phase, index, total, font:FontObject | null) => {
 			if (phase === 'start') {
 				// starting font loading
 				this.operationMode = 'determinate';
@@ -70,7 +70,7 @@ export class AppComponent implements OnInit, OnDestroy {
 			else if (phase === 'next') {
 				if (font) this._fonts.push(font);
 				// console.log(font.font.names.fullName['en']);
-				this.operationProgress = i / n * 100;
+				this.operationProgress = index / total * 100;
 			}
 			else if (phase === 'end') {
 				delete this.operationMode;
